@@ -1,5 +1,6 @@
 import { createClient } from "redis";
 import dotenv from "dotenv";
+import logger from "./logger";
 dotenv.config();
 
 const client = createClient({
@@ -12,16 +13,16 @@ const client = createClient({
 });
 
 client.on("error", (err: Error) => {
-  console.log("Redis Client Error", err);
+  logger.info("Redis Client Error", err);
 });
 
 await client.connect();
-console.log("Connected to Redis");
+logger.info("Connected to Redis");
 
 export default client;
 
 process.on('SIGINT', async () => {
   await client.disconnect();
-  console.log('Disconnected from Redis');
+  logger.info('Disconnected from Redis');
   process.exit(0);
 });

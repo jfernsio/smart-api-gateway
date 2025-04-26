@@ -1,6 +1,7 @@
 import express, { response } from "express";
 import client from "../src/lib/client.ts";
 import { timeStamp } from "console";
+import logger from "../src/lib/logger.ts";
 const proxyRouter = express.Router();
 
 proxyRouter.post("/proxy", async (req, res) => {
@@ -11,7 +12,7 @@ proxyRouter.post("/proxy", async (req, res) => {
   const cachedResponse = await client.get(cacheKey);
   //if da res is already cached rerturn it
   if (cachedResponse) {
-    console.log("Cache hit");
+    logger.info("Cache hit");
     return res.status(200).json(JSON.parse(cachedResponse));
   }
   try {
@@ -34,7 +35,7 @@ proxyRouter.post("/proxy", async (req, res) => {
     });
     res.status(response.status).json(data);
   } catch (err) {
-    console.error("Error in proxy request:", err);
+    logger.error("Error in proxy request:", err);
 
     if (err instanceof Error) {
       return res.status(500).json({ error: err.message });
@@ -70,10 +71,24 @@ proxyRouter.get("/analytics", async (req, res) => {
 
     res.status(200).json({ analytics: parsedLogs });
   } catch (err) {
-    console.error("Error parsing analytics logs:", err);
+    logger.error("Error parsing analytics logs:", err);
     return res.status(500).json({ error: "Failed to fetch analytics logs" });
   }
 });
+
+proxyRouter.get('/health',async (req,res) => {
+  try {
+    const pong = await client.ping();
+    if (pong === "PONG") {
+      return res.status(200).json({ message: "Redis is healthy" });
+    } else {
+      return res.status(500).json({ message: "Redis is not healthy" });
+    }
+  } catch (err) {
+    logger.error("Error checking Redis health:", err);
+    return res.status(500).json({ status:'error',msg:'Health check failed'});
+  }
+})
 
 //rn set to get for faster res later refactotr to post
 proxyRouter.post("/cache", async (req, res) => {
