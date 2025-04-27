@@ -5,6 +5,10 @@ import logger from "../src/lib/logger.ts";
 const proxyRouter = express.Router();
 
 proxyRouter.post("/proxy", async (req, res) => {
+  const controller = new AbortController();
+const timeout = setTimeout(() => {
+  controller.abort();
+}, 5000); // 5 seconds timeout
   const { url, method, headers, body } = req.body;
 
   const cacheKey = `${method}:${url}`;
@@ -23,8 +27,14 @@ proxyRouter.post("/proxy", async (req, res) => {
         "Content-Type": "application/json",
       },
       body: method === "GET" ? undefined : JSON.stringify(body), //get does not have body
+      signal: controller.signal, // Pass the abort signal to fetch
     });
 
+    clearTimeout(timeout); // Clear the timeout if the request completes
+    if (!response.ok) {
+      logger.error("Error in proxy request:", response.statusText);
+      return res.status(response.status).json({ error: response.statusText });
+    }
     const data = await response.json();
     if (!response.ok) {
       return res.status(response.status).json(data);
