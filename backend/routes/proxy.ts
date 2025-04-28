@@ -1,16 +1,16 @@
 import express, { response } from "express";
 import client from "../src/lib/client.ts";
-import { timeStamp } from "console";
 import logger from "../src/lib/logger.ts";
+import { analyticsLogger } from "../middleware/analyticsLogger.ts";
 const proxyRouter = express.Router();
 
-proxyRouter.post("/proxy", async (req, res) => {
+proxyRouter.post("/proxy",analyticsLogger, async (req, res) => {
   const controller = new AbortController();
 const timeout = setTimeout(() => {
   controller.abort();
 }, 5000); // 5 seconds timeout
   const { url, method, headers, body } = req.body;
-
+  logger.info(`Request to proxy URL: ${url}`);
   const cacheKey = `${method}:${url}`;
 
   const cachedResponse = await client.get(cacheKey);
@@ -46,16 +46,14 @@ const timeout = setTimeout(() => {
     res.status(response.status).json(data);
   } catch (err) {
     logger.error("Error in proxy request:", err);
-
+      if (err instanceof Error && err.name === 'AbortError') {
+    return res.status(504).json({ error: "Upstream server timeout" });
+  }
     if (err instanceof Error) {
       return res.status(500).json({ error: err.message });
     }
     return res.status(500).json({ error: "Proxy request failed" });
   }
-  res.status(200).json({
-    msg: "Proxy hit!",
-  });
-
   //analyastci
   const analystic = {
     url,
@@ -118,10 +116,11 @@ proxyRouter.post("/cache", async (req, res) => {
 proxyRouter.get("/cache/:key", async (req, res) => {
   const { key } = req.params;
   const val = await client.get(key);
+  const ttlInSeconds = await client.ttl(key)
   if (!val) {
     return res.status(404).json({ message: `Key "${key}" not found` });
   }
-  res.status(200).json({ message: `Key "${key}" found`, value: val });
+  res.status(200).json({ message: `Key "${key}" found`, value: val,ttl: `Time left to expier ${ttlInSeconds}` });
 });
 
 proxyRouter.delete("/cache/:key", async (req, res) => {

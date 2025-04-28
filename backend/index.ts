@@ -6,6 +6,7 @@ import logger from './src/lib/logger';
 import rateLimit from 'express-rate-limit';
 import { proxyRouter } from './routes/proxy';
 import client from './src/lib/client';
+import { errorHandler } from './middleware/errorHandler';
 dotenv.config()
 const app = express();
 const swaggerDocument = YAML.load('./swagger.yaml');
@@ -44,4 +45,4 @@ process.on('SIGTERM', async () => {
     process.exit(0);
 });
   
-  
+// app.use(errorHandler);  
