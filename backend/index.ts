@@ -45,4 +45,4 @@ process.on('SIGTERM', async () => {
     process.exit(0);
 });
   
-// app.use(errorHandler);  
+app.use(errorHandler);  
