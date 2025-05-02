@@ -24,6 +24,8 @@ proxyRouter.post("/proxy",rateLimiterMiddleware, analyticsLogger, async (req, re
   //if da res is already cached rerturn it
   if (cachedResponse) {
     logger.info("Cache hit");
+    // Increment cache hits
+    const cacheHits = await client.incr("cacheHits");
     return res.status(200).json(JSON.parse(cachedResponse));
   }
 
@@ -71,6 +73,7 @@ proxyRouter.post("/proxy",rateLimiterMiddleware, analyticsLogger, async (req, re
     return res.status(response.status).json(data);
   } catch (err) {
     logger.error("Error in proxy request:", err);
+    
     if (err instanceof Error && err.name === "AbortError") {
       return res.status(504).json({ error: "Upstream server timeout" });
     }
@@ -115,6 +118,33 @@ proxyRouter.get("/health", async (req, res) => {
       .json({ status: "error", msg: "Health check failed" });
   }
 });
+
+proxyRouter.get('/stats',async (req,res) =>{
+  try {
+      //get total redis keys
+ const totalKeys = await client.dbSize();
+  //get total analytics logs
+  const totalAnalytics = await client.lLen("analytics");
+  //get total cache hits
+  const totalCacheHits = await client.get("cacheHits");
+  //get total cache misses
+  const totalCacheMisses = await client.get("cacheMisses");
+  //get total no of requests
+  const totalRequests = await client.get("totalRequests");
+  res.status(200).json({
+    totalKeys,
+    totalAnalytics,
+    totalCacheHits,
+    totalCacheMisses,
+    totalRequests,
+  });
+  } catch (error) {
+    logger.error("Error fetching stats:", error);
+    res.status(500).json({ message: "Error fetching stats" });
+  }
+
+
+})
 
 //rn set to get for faster res later refactotr to post
 proxyRouter.post("/cache", async (req, res) => {
