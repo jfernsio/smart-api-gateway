@@ -6,6 +6,8 @@ import { rateLimiterMiddleware } from "../middleware/rateLimiter.ts";
 const proxyRouter = express.Router();
 
 proxyRouter.post("/proxy",rateLimiterMiddleware, analyticsLogger, async (req, res) => {
+  //increment total requests
+  const totalRequests = await client.incr("totalRequests");
   const controller = new AbortController();
 
   const timeout = setTimeout(() => {

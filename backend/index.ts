@@ -46,3 +46,4 @@ process.on('SIGTERM', async () => {
 });
   
 app.use(errorHandler);  
+export default app;
