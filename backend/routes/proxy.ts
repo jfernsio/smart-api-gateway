@@ -166,7 +166,7 @@ proxyRouter.post("/cache", async (req, res) => {
 proxyRouter.get("/cache/:key", async (req, res) => {
 
   const { key } = req.params;
-  
+  logger.info(`encoding url: ${encodeURIComponent(key)}`);
   logger.debug(`Fetching value for key: ${key}`);
   
   const val = await client.get(key);

@@ -23,7 +23,13 @@ describe('POST /api/proxy', () => {
   });
 
   it('should return cached data on second call', async () => {
-    const key = encodeURIComponent('GET:https://catfact.ninja/fact');
+    const key = 'GET%3Ahttps%3A%2F%2Fcatfact.ninja%2Ffact';
+    const cached = await client.get(key);
+    expect(cached).not.toBeNull();
+  });
+
+  it('should return cached data on second call', async () => {
+    const key = 'GET%3Ahttps%3A%2F%2Fcatfact.ninja%2Ffact';
     const cached = await client.get(key);
     expect(cached).not.toBeNull();
   });
